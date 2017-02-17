@@ -42,6 +42,23 @@ $argDefs = [
 			'p'
 		],
 		'default' => ''
+	],
+	[
+		'name' => 'beanstalkdIp',
+		'keys' => [
+			'ip',
+			'i'
+		],
+		'default' => '127.0.0.1'
+	],
+	[
+		'name' => 'beanstalkdPort',
+		'keys' => [
+			'port',
+			'o'
+		],
+		'default' => '11300'
+
 	]
 ];
 $h = getenv('HOME');
@@ -66,9 +83,11 @@ $o = [
 	'convid:',
 	'refresh-token:',
 	'watch:',
+	'ip:',
+	'port:',
 ];
 
-$options = getopt('c:w:r:', $o);
+$options = getopt('c:w:r:i:o:', $o);
 $config = array_merge($defaults);
 
 foreach ($argDefs as $arg) {
@@ -123,7 +142,7 @@ try {
 
 Amp\run(function () use ($config, $hwpclient) {
 try {
-	$client = new Amp\Beanstalk\BeanstalkClient('127.0.0.1:11300');
+	$client = new Amp\Beanstalk\BeanstalkClient($config['beanstalkdIp'].':'.$config['beanstalkdPort']);
 
 	$client->watch($config['watch']);
 
@@ -207,6 +226,10 @@ function helpText() {
 	echo "                          (defaults to 'hangouts')\n";
 	echo "  -c --convid:            The unique conversation ID\n";
 	echo "  -r --refresh-token:     The filename to use as refresh token cache.\n";
+	echo "  -i --ip:                The IP address of the beanstalkd server\n";
+	echo "                          (defaults to '127.0.0.1')\n";
+	echo "  -o --port:              The port number of the beanstalkd server\n";
+	echo "                          (defaults to '11300')\n";
 	echo "  -e --email:             Email for sign-in.\n";
 	echo "                          (only required one time if --refresh-token is used)\n";
 	echo "                          (Using email and password is strongly discouraged\n";
