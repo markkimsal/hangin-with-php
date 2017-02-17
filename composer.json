@@ -1,0 +1,12 @@
+{
+	"repositories": [ 
+	{ 
+		"type": "vcs",
+		"url": "https://github.com/markkimsal/beanstalk.git"
+	}],
+
+    "require": {
+        "markkimsal/beanstalk": "^0.2.0",
+        "rmccue/requests": "^1.7"
+    }
+}
