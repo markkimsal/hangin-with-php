@@ -66,9 +66,11 @@ $o = [
 	'convid:',
 	'convtext:',
 	'text:',
+	'password:',
+	'email:',
 	'refresh-token:',
 ];
-$options = getopt('c:t:r:', $o);
+$options = getopt('c:t:r:p:e:', $o);
 $config = array_merge($defaults);
 
 foreach ($argDefs as $arg) {
