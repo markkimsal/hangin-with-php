@@ -3,13 +3,27 @@ Send Hangout messages with PHP and Beanstalkd
 
 ## setup
 
-Run the send_message script once to authorize to Google and obtain a refresh token.
+Run the bin/cli_auth_once.php script once to authorize to Google and obtain a refresh token.
 ```
-php ./bin/cli_send_message.php --email youremail --password password --refresh-token /home/user/.cache/hwp/refresh-token.txt --text "Hello World"
+php ./bin/cli_auth_once.php --email youremail --password password --refresh-token $(pwd)/refresh-token.txt
 ```
 
-After a few seconds hit Ctrl+C to stop the process.  You have now done your first time registration and the system has access
-to a refresh token and no longer needs your email and password.
+The OAuth2 refresh token will be stored in the file provided.  This refresh token means you will not have to type
+your email and password for any subsequent commands.  The refresh token's access to your account can be revoked 
+from Google's device access page.  This script presents itself as an iOS device for various reasons.
+
+
+## sending a message
+
+Once you have obtained a refresh token, you can send a message to a conversation.
+
+```
+php ./bin/cli_send_message.php --refresh-token $(pwd)/refresh-token.txt --convid XXXXXX --text "Your Test Message"
+```
+
+The conversation ID can be obtained by inspecting your network in the Gmail Web client, or by using the "build conversation list"
+example in the hangups project's examples folder.
+
 
 ## beanstalk client
 
