@@ -10,6 +10,7 @@ class Client {
 	public $accessToken  = '';
 	public $config       = [];
 	public $cookies      = [];
+	public $givenId      = NULL;
 
 	public function __construct($session, $config) {
 		$this->config = $config;
@@ -31,8 +32,10 @@ class Client {
 			$sapisidCookie  = $startSessionResponse->offsetGet('SAPISID');
 			$this->cookies['sapisid'] = $sapisidCookie->value;
 
+/*
 			$this->startBackChannel();
 			$this->getNewClientId();
+*/
 		} catch (\Exception $e) {
 			$this->isConnected = FALSE;
 			throw $e;
@@ -85,7 +88,7 @@ class Client {
 					$_c->value,
 					$_c->attributes->offsetGet('expires'),
 					$_c->attributes->offsetGet('path'),
-					$_c->attributes->offsetGet('domain')
+					'.'.$_c->attributes->offsetGet('domain')
 				)
 			);
 		}
@@ -120,9 +123,40 @@ class Client {
 		foreach ($headers as $_k => $_v) {
 			$request->setHeader($_k, $_v);
 		}
-		$promise = $client->request($request, [\Amp\Artax\Client::OP_DEFAULT_USER_AGENT => 'php-requests/1.6-dev']);
+		$promise = $client->request($request, [\Amp\Artax\Client::OP_DEFAULT_USER_AGENT => 'php-requests/1.6-dev', \Amp\Artax\Client::OP_MS_TRANSFER_TIMEOUT => 12000]);
 		$promise->watch( array($this, 'notifyCallback') );
-		$response = \Amp\wait($promise);
+
+
+
+		$params = [
+			'VER'        => 8,  # channel protocol version
+			'RID'        => 81188,  # request identifier
+			'ctype'      => 'hangouts',  # client type
+			'gsessionid' => $this->gsessid,
+			'SID'        => $this->sid,
+		];
+
+		$pbUrl = 'https://0.client-channel.google.com/client-channel/'.$ep.'?'.http_build_query($params);
+		echo sprintf("D/Client: channel bind: %s\n", $pbUrl);
+		$request2 = (new \Amp\Artax\Request)
+			->setUri($pbUrl)
+			->setMethod('POST')
+			->setBody('{\'req0_p\': \'{"3": {"1": {"1": "babel"}}}\', \'count\': 1, \'ofs\': 0}');
+
+		foreach ($headers as $_k => $_v) {
+			$request->setHeader($_k, $_v);
+		}
+		$promise2 = $client->request($request2, [\Amp\Artax\Client::OP_DEFAULT_USER_AGENT => 'php-requests/1.6-dev', \Amp\Artax\Client::OP_MS_TRANSFER_TIMEOUT => 12000]);
+	
+			$response = \Amp\wait($promise2);
+var_dump($response);
+
+		try {
+			$response = \Amp\wait($promise);
+		} catch (\Amp\Artax\TimeoutException $e) {
+			//TODO. run in background, signal src/Conversation
+			//without blocking
+		}
 
 		/*
 		$response = $this->session->post($pbUrl,
@@ -131,11 +165,13 @@ class Client {
 		);
 		var_dump($response->body);
 		 */
+		/*
 		echo sprintf("D/Client: channel bind response: %s\n", $response->getStatus());
 		$parts         = explode("\n", $response->getBody());
 		$len           = array_shift($parts);
 		$struct        = json_decode( implode('', $parts), TRUE);
 		var_dump($struct);
+		 */
 
 	}
 
@@ -143,11 +179,22 @@ class Client {
 		$event = array_shift($notifyData);
 		switch ($event) {
 			case \Amp\Artax\Notify::SOCK_DATA_IN:
-				var_dump($notifyData);
+				$d = array_shift($notifyData);
+				$parts = explode("\n", $d);
+				$unknown = array_shift($parts);
+				$len     = array_shift($parts);
+				$parts   = implode("\n", $parts);
+				$message = json_decode($parts, TRUE);
+				if (array_key_exists('p', $message[0][1][0])) {
+					$json = json_decode($message[0][1][0]['p'], TRUE);
+					echo "I/Client: Got given ID of ".$json['3']['2']."\n";
+					$this->givenId = $json['3']['2'];
+
+					$x = Conversation::loadConversationList($this);
+				}
 				break;
 
 			case \Amp\Artax\Notify::SOCK_DATA_OUT:
-				var_dump($notifyData);
 				break;
 		}
 	}
@@ -345,6 +392,7 @@ https://clients6.google.com/chat/v1/contacts/getselfinfo
 */
 		$pbUrl = 'https://clients6.google.com/chat/v1/'.$ep.'?key='.$API_KEY.'&alt=proto';
 		echo $pbUrl."\n";
+		echo($request->dump())."\n";
 
 		//$response = $http->post('https://clients6.google.com/chat/v1/'.$ep.'?key='.$API_KEY.'&alt=protojson',
 		$response = $http->post($pbUrl,
