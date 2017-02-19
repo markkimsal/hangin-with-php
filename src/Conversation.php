@@ -41,7 +41,7 @@ include_once('gen_inc/DeliveryMediumOption.php');
 class Conversation {
 
 
-	public static function loadConversationList($client) {
+	public static function loadConversationList($client, $timestamp=0) {
 //		while ($client->givenId == NULL) {
 //			sleep(1);
 //		}
@@ -61,8 +61,9 @@ class Conversation {
 
 		$request->setMaxEventsPerConversation(1);
 		$request->setMaxConversations(100);
-//		$request->setLastEventTimestamp( 0 );
-//		$request->setLastEventTimestamp( time() - (3600 * 24 * 30) );
+		if ($timestamp >0 ) {
+			$request->setLastEventTimestamp($timestamp);
+		}
 
 		$request->appendSyncFilter(\SyncFilter::SYNC_FILTER_ARCHIVED);
 		$request->appendSyncFilter(\SyncFilter::SYNC_FILTER_INBOX);
