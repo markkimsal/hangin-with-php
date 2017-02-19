@@ -24,7 +24,7 @@ class UserEventState extends \ProtobufMessage
         self::CLIENT_GENERATED_ID => array(
             'name' => 'client_generated_id',
             'required' => false,
-            'type' => \ProtobufMessage::PB_TYPE_STRING,
+            'type' => \ProtobufMessage::PB_TYPE_INT,
         ),
         self::NOTIFICATION_LEVEL => array(
             'name' => 'notification_level',

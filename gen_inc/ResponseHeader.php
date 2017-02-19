@@ -36,7 +36,7 @@ class ResponseHeader extends \ProtobufMessage
         self::REQUEST_TRACE_ID => array(
             'name' => 'request_trace_id',
             'required' => false,
-            'type' => \ProtobufMessage::PB_TYPE_STRING,
+            'type' => \ProtobufMessage::PB_TYPE_INT,
         ),
         self::CURRENT_SERVER_TIME => array(
             'name' => 'current_server_time',
