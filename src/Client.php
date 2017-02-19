@@ -77,6 +77,22 @@ class Client {
 	}
 
 	public function getNewClientId() {
+		$cookieJar = new \Amp\Artax\Cookie\ArrayCookieJar();
+		foreach ($this->session->cookies as $_c) {
+			$cookieJar->store(
+				new \Amp\Artax\Cookie\Cookie(
+					$_c->name,
+					$_c->value,
+					$_c->attributes->offsetGet('expires'),
+					$_c->attributes->offsetGet('path'),
+					$_c->attributes->offsetGet('domain')
+				)
+			);
+		}
+
+		$reactor = \Amp\reactor();
+		$client = new \Amp\Artax\Client($cookieJar);
+
         $params = [
             'VER'        => 8,  # channel protocol version
             'gsessionid' => $this->gsessid,
@@ -92,26 +108,48 @@ class Client {
 		# API key for from Hangouts web client
 		$API_KEY = 'AIzaSyAfFJCeph-euFSwtmqFZi0kaKk-cZ5wufM';
 		$headers = Hangouts::makeAuthorizationHeaders($scookie);
-		$headers += [
-			'X-Goog-Encode-Response-If-Executable' => 'base64',
-			'Content-Type'                         => 'application/json',
-		];
 
 		$ep  = 'channel/bind';
 		$pbUrl = 'https://0.client-channel.google.com/client-channel/'.$ep.'?'.http_build_query($params);
 		echo sprintf("D/Client: channel bind: %s\n", $pbUrl);
 
+		$request = (new \Amp\Artax\Request)
+			->setUri($pbUrl)
+			->setMethod('GET');
+
+		foreach ($headers as $_k => $_v) {
+			$request->setHeader($_k, $_v);
+		}
+		$promise = $client->request($request, [\Amp\Artax\Client::OP_DEFAULT_USER_AGENT => 'php-requests/1.6-dev']);
+		$promise->watch( array($this, 'notifyCallback') );
+		$response = \Amp\wait($promise);
+
+		/*
 		$response = $this->session->post($pbUrl,
 			$headers,
 			json_encode(['ofs'=>0, 'count'=>0])
 		);
 		var_dump($response->body);
-		echo sprintf("D/Client: channel bind response: %s\n", $response->status_code);
-		$parts         = explode("\n", $response->body);
+		 */
+		echo sprintf("D/Client: channel bind response: %s\n", $response->getStatus());
+		$parts         = explode("\n", $response->getBody());
 		$len           = array_shift($parts);
 		$struct        = json_decode( implode('', $parts), TRUE);
 		var_dump($struct);
 
+	}
+
+	public function notifyCallback(array $notifyData) {
+		$event = array_shift($notifyData);
+		switch ($event) {
+			case \Amp\Artax\Notify::SOCK_DATA_IN:
+				var_dump($notifyData);
+				break;
+
+			case \Amp\Artax\Notify::SOCK_DATA_OUT:
+				var_dump($notifyData);
+				break;
+		}
 	}
 
 	public function sendChatMessage($convId, $txt) {
