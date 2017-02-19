@@ -7,6 +7,7 @@
 
     "require": {
         "markkimsal/beanstalk": "^0.2.0",
+        "amphp/artax": "^2.0.5",
         "rmccue/requests": "^1.7"
     }
 }
