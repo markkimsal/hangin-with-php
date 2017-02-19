@@ -4,12 +4,14 @@ namespace HWP;
 
 class Client {
 
+	public $backChannel  = NULL;
 	public $isConnected  = FALSE;
 	public $session;
 	public $refreshToken = '';
 	public $accessToken  = '';
 	public $config       = [];
 	public $cookies      = [];
+	public $givenId      = NULL;
 
 	public function __construct($session, $config) {
 		$this->config = $config;
@@ -30,6 +32,13 @@ class Client {
 
 			$sapisidCookie  = $startSessionResponse->offsetGet('SAPISID');
 			$this->cookies['sapisid'] = $sapisidCookie->value;
+			//TODO: this needs to be rewritten to all use AMP
+			//async methods
+/*
+			$this->backChannel = new BackChannel();
+			$this->backChannel->startBackChannel();
+			$this->backChannel->getNewClientId();
+*/
 		} catch (\Exception $e) {
 			$this->isConnected = FALSE;
 			throw $e;
@@ -42,7 +51,6 @@ class Client {
 		echo "I/Hangouts: Sending chat message - conversation ID: ".$convId." strlen: ".strlen($txt)."\n";
 		$rq = Hangouts::sendChatMessageRequest($convId, $txt);
 		$this->sendData($this->session, $rq);
-
 	}
 
 	public function startHangoutSession($http, $accessToken ) {
@@ -72,7 +80,6 @@ class Client {
 		return $cookies;
 
 	}
-
 
 	public function getAccessFromRefresh() {
 		$data = [
@@ -176,6 +183,8 @@ class Client {
 	public function getRefreshToken() {
 		if (is_file($this->config['refreshTokenFile'])) {
 			$this->refreshToken =  file_get_contents($this->config['refreshTokenFile']);
+			echo "D/Client: got refresh token: ". $this->refreshToken." from file: ".$this->config['refreshTokenFile']."\n";
+		
 			return (bool)strlen($this->refreshToken);
 		}
 		return FALSE;
@@ -195,11 +204,14 @@ class Client {
 		);
 	}
 
-	public function sendData($http, $request) {
-		return $this->_baseRequest($http, $request);
+	public function sendData($http, $request, $endpoint='conversations/sendchatmessage') {
+		if ($http == NULL ) {
+			$http = $this->session;
+		}
+		return $this->_baseRequest($http, $request, $endpoint);
 	}
 
-	public function _baseRequest($http, $request) {
+	public function _baseRequest($http, $request, $ep) {
 		$scookie = $this->cookies['sapisid'];
 		# API key for from Hangouts web client
 		$API_KEY = 'AIzaSyAfFJCeph-euFSwtmqFZi0kaKk-cZ5wufM';
@@ -209,10 +221,32 @@ class Client {
 			'Content-Type'                         => 'application/x-protobuf',
 		];
 
-		$response = $http->post('https://clients6.google.com/chat/v1/conversations/sendchatmessage?key='.$API_KEY.'&alt=protojson',
+		/*
+		 *
+{'alt': 'proto', 'key': 'AIzaSyAfFJCeph-euFSwtmqFZi0kaKk-cZ5wufM'}
+https://clients6.google.com/chat/v1/conversations/syncrecentconversations
+fwrite($f, "content-type: application/x-protobuf\n");
+fwrite($f, "authorization: SAPISIDHASH 1487431873226_a0d2e5c5a8d0a577a9684ec7e79c440c2fb02244\n");
+fwrite($f, "x-origin: https://talkgadget.google.com\n");
+fwrite($f, "x-goog-authuser: 0\n");
+fwrite($f, "X-Goog-Encode-Response-If-Executable: base64\n");
+fwrite($f, "Cookies: APISID=Yp6iSTVc6H2RlGAH/AH7AokTo7SdT0iWs-; SAPISID=cdqGOEneAv4tZPV7/AfW3LYCiTQsodl4_i; SSID=AjM5ExIv31lSvPlyr; HSID=ATi8KpE1P5KFLl_Pa; SID=WgRzSpILTQmvPoXW_G7MlSjSmVRUpMvX7oPm7wWf_TNnjCStMBRl8nr7itA1_IYnJQEIHw.; 
+
+");
+{'alt': 'proto', 'key': 'AIzaSyAfFJCeph-euFSwtmqFZi0kaKk-cZ5wufM'}
+https://clients6.google.com/chat/v1/contacts/getselfinfo
+
+*/
+		$pbUrl = 'https://clients6.google.com/chat/v1/'.$ep.'?key='.$API_KEY.'&alt=proto';
+		echo $pbUrl."\n";
+		echo($request->dump())."\n";
+
+		//$response = $http->post('https://clients6.google.com/chat/v1/'.$ep.'?key='.$API_KEY.'&alt=protojson',
+		$response = $http->post($pbUrl,
 			$headers,
 			$request->serializeToString()
 		);
+		return $response;
 		/*
 		echo "D/Hangouts: _baseRequest: ".$request->serializeToString()."\n";
 		echo "D/Hangouts: _baseRequest: status ". $response->status_code."\n";
