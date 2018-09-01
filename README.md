@@ -1,6 +1,16 @@
 # hangin-with-php
 Send Hangout messages with PHP and Beanstalkd
 
+### protobuf-php dependency
+
+    git clone https://github.com/allegro/php-protobuf
+	cd php-protobuf
+	phpize
+	./configure
+	make
+	sudo make install
+	php -d extension=protobuf.so
+
 ## setup
 
 Run the bin/cli_auth_once.php script once to authorize to Google and obtain a refresh token.
