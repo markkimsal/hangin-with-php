@@ -76,7 +76,16 @@ try {
 	$client = new HWP\Client($session, $config);
 	$client->connect();
 
-	$x = HWP\Conversation::loadConversationList($client);
+	$response = HWP\Conversation::loadConversationList($client);
+	//display recent conversations
+	foreach ($response->values[3] as $conversationState) {
+		echo "Conversation ID: ".$conversationState->values[1]->values[1]." ";
+		echo "with : ";
+		foreach($conversationState->values[2]->values[14] as $participant) {
+			echo $participant->values[2] ." | ";
+		}
+		echo "\n";
+	}
 } catch (Exception $e) {
 	echo "E/". get_class($e).": ".$e->getMessage()."\n";
 	die(1);
