@@ -28,6 +28,27 @@ with quotes and back slashes.
     --password "IAmV\#ryL33t\!"
 
 
+## obtain conversation ID
+
+To get a list of recent conversations, use the token and call cli\_get\_conversations
+
+```
+php -d extension=protobuf.so ./bin/cli_get_conversations.php  --refresh-token $(pwd)/refresh-token.txt
+```
+or
+```
+php ./bin/cli_get_conversations.php  --refresh-token $(pwd)/refresh-token.txt
+```
+
+You should get a list of conversations like this:
+
+```
+Conversation ID: Ugypng60_1kSr0ljs_W3jklbnQ with : Father | Mark Kimsal | 
+Conversation ID: Ugy-Yz0W_Sr01kljsRRklu94X3 with : Brother | Mark Kimsal | 
+Conversation ID: UgwQCNck_Sr01kljs_Znwqlk43 with : Mom | Mark Kimsal | 
+
+```
+
 ## sending a message
 
 Once you have obtained a refresh token, you can send a message to a conversation.
