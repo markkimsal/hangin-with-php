@@ -22,6 +22,11 @@ The OAuth2 refresh token will be stored in the file provided.  This refresh toke
 your email and password for any subsequent commands.  The refresh token's access to your account can be revoked 
 from Google's device access page.  This script presents itself as an iOS device for various reasons.
 
+Not often do you have to put a password on command line.  Remember to escape your password special chars from bash
+with quotes and back slashes.
+
+    --password "IAmV\#ryL33t\!"
+
 
 ## sending a message
 
